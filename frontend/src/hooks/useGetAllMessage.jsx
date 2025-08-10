@@ -1,0 +1,35 @@
+import { setMessages } from "@/redux/chatSlice";
+import axios from "axios";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+const useGetAllMessage = () => {
+    const dispatch = useDispatch();
+    const { selectedUser } = useSelector((store) => store.auth);
+
+    useEffect(() => {
+        if (!selectedUser?._id) return; // Ensure the selectedUser exists before making the API call.
+
+        const fetchAllMessages = async () => {
+            try {
+                const res = await axios.get(
+                    `http://localhost:8000/api/v1/message/all/${selectedUser._id}`,
+                    { withCredentials: true }
+                );
+                if (res.data.success) {
+                    dispatch(setMessages(res.data.messages));
+                }
+            } catch (error) {
+                console.error("Failed to fetch messages:", error);
+                // Optional: Dispatch an error to Redux or show a notification.
+            }
+        };
+
+        // Immediately invoke the async function
+        (async () => {
+            await fetchAllMessages();
+        })();
+    }, [selectedUser, dispatch]); // Include dispatch in the dependency array.
+};
+
+export default useGetAllMessage;
