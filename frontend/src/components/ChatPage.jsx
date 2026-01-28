@@ -8,11 +8,13 @@ import { MessageCircleCode } from 'lucide-react';
 import Messages from './Messages';
 import axios from 'axios';
 import { setMessages } from '@/redux/chatSlice';
+import { clearUnread, setActiveChatUserId } from "@/redux/chatSlice";
+
 
 const ChatPage = () => {
     const [textMessage, setTextMessage] = useState("");
     const { user, suggestedUsers = [], selectedUser } = useSelector(store => store.auth); // Default to empty array
-    const { onlineUsers = [], messages = [] } = useSelector(store => store.chat); // Default to empty arrays
+    const { onlineUsers = [], messages = [], unreadCounts = {}  } = useSelector(store => store.chat); // Default to empty arrays
     const dispatch = useDispatch();
 
     const sendMessageHandler = async (receiverId) => {
@@ -47,34 +49,44 @@ const ChatPage = () => {
                 <hr className="mb-4 border-gray-300" />
                 <div className="overflow-y-auto h-[80vh]">
                     {Array.isArray(suggestedUsers) && suggestedUsers.length > 0 ? (
-                        suggestedUsers.map((suggestedUser) => {
-                            const isOnline = onlineUsers.includes(suggestedUser?._id);
-                            return (
-                                <div
-                                    key={suggestedUser?._id}
-                                    onClick={() => dispatch(setSelectedUser(suggestedUser))}
-                                    className="flex gap-3 items-center p-3 hover:bg-gray-50 cursor-pointer"
-                                >
-                                    <Avatar className="w-14 h-14">
-                                        <AvatarImage src={suggestedUser?.profilePicture} />
-                                        <AvatarFallback>CN</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium">{suggestedUser?.username}</span>
-                                        <span
-                                            className={`text-xs font-bold ${
-                                                isOnline ? 'text-green-600' : 'text-red-600'
-                                            }`}
-                                        >
-                                            {isOnline ? 'online' : 'offline'}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <p className="text-gray-500 text-center">No suggested users available.</p>
-                    )}
+  suggestedUsers.map((suggestedUser) => {
+    const isOnline = onlineUsers.includes(suggestedUser?._id);
+    const unread = unreadCounts[suggestedUser?._id] || 0;
+
+    return (
+      <div
+        key={suggestedUser?._id}
+        onClick={() => {
+          dispatch(setSelectedUser(suggestedUser));
+          dispatch(setActiveChatUserId(suggestedUser?._id));
+          dispatch(clearUnread(suggestedUser?._id));
+        }}
+        className="flex gap-3 items-center p-3 hover:bg-gray-50 cursor-pointer"
+      >
+        <Avatar className="w-14 h-14">
+          <AvatarImage src={suggestedUser?.profilePicture} />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+
+        <div className="flex flex-col">
+          <span className="font-medium">{suggestedUser?.username}</span>
+          <span className={`text-xs font-bold ${isOnline ? "text-green-600" : "text-red-600"}`}>
+            {isOnline ? "online" : "offline"}
+          </span>
+        </div>
+
+        {unread > 0 && (
+          <div className="ml-auto min-w-[22px] h-[22px] px-2 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+            {unread > 99 ? "99+" : unread}
+          </div>
+        )}
+      </div>
+    );
+  })
+) : (
+  <p className="text-gray-500 text-center">No suggested users available.</p>
+)}
+
                 </div>
             </section>
             {selectedUser ? (

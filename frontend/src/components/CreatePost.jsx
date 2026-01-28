@@ -54,7 +54,7 @@ const CreatePost = ({ open, setOpen }) => {
   }
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent onInteractOutside={() => setOpen(false)}>
         <DialogHeader className='text-center font-semibold'>Create New Post</DialogHeader>
         <div className='flex gap-3 items-center'>

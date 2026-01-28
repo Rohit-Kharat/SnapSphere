@@ -17,20 +17,21 @@ const userSocketMap = {} ; // this map stores socket id corresponding the user i
 
 export const getReceiverSocketId = (receiverId) => userSocketMap[receiverId];
 
-io.on('connection', (socket)=>{
-    const userId = socket.handshake.query.userId;
-    if(userId){
-        userSocketMap[userId] = socket.id;
-    }
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId?.toString(); // ✅ HERE
+  console.log("✅ CONNECT", { socketId: socket.id, userId });
 
-    io.emit('getOnlineUsers', Object.keys(userSocketMap));
+  if (userId) userSocketMap[userId] = socket.id;
 
-    socket.on('disconnect',()=>{
-        if(userId){
-            delete userSocketMap[userId];
-        }
-        io.emit('getOnlineUsers', Object.keys(userSocketMap));
-    });
-})
+
+  console.log("🧠 userSocketMap", userSocketMap);
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  socket.on("disconnect", () => {
+    console.log("❌ DISCONNECT", { socketId: socket.id, userId });
+    if (userId) delete userSocketMap[userId];
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+});
 
 export {app, server, io};

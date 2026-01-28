@@ -10,7 +10,7 @@ const Messages = ({ selectedUser }) => {
     useGetRTM();
     useGetAllMessage();
     const {messages} = useSelector(store=>store.chat);
-    const {user} = useSelector(store=>store.auth);
+    const {user} = useSelector(store=>store.auth);  
     return (    
         <div className='overflow-y-auto flex-1 p-4'>
             <div className='flex justify-center'>

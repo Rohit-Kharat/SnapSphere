@@ -5,6 +5,7 @@ import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
 
+
 export const addNewPost = async (req, res) => {
     try {
         const { caption } = req.body;
@@ -112,7 +113,14 @@ export const likePost = async (req, res) => {
                 message:'Your post was liked'
             }
             const postOwnerSocketId = getReceiverSocketId(postOwnerId);
-            io.to(postOwnerSocketId).emit('notification', notification);
+
+console.log("postOwnerId:", postOwnerId, "postOwnerSocketId:", postOwnerSocketId);
+
+if (postOwnerSocketId) {
+  io.to(postOwnerSocketId).emit("notification", notification);
+} else {
+  console.log("User is offline OR not connected to socket:", postOwnerId);
+}
         }
 
         return res.status(200).json({message:'Post liked', success:true});
@@ -144,7 +152,14 @@ export const dislikePost = async (req, res) => {
                 message:'Your post was liked'
             }
             const postOwnerSocketId = getReceiverSocketId(postOwnerId);
-            io.to(postOwnerSocketId).emit('notification', notification);
+
+console.log("postOwnerId:", postOwnerId, "postOwnerSocketId:", postOwnerSocketId);
+
+if (postOwnerSocketId) {
+  io.to(postOwnerSocketId).emit("notification", notification);
+} else {
+  console.log("User is offline OR not connected to socket:", postOwnerId);
+}
         }
 
 
@@ -259,3 +274,33 @@ export const bookmarkPost = async (req,res) => {
         console.log(error);
     }
 }
+// controllers/post.controller.js
+export const deleteComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user._id;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({ success: false, message: "Comment not found" });
+    }
+
+    // allow only comment owner (you can also allow post owner if you want)
+    if (String(comment.author) !== String(userId)) {
+      return res.status(403).json({ success: false, message: "Not allowed" });
+    }
+
+    // remove comment reference from post
+    await Post.findByIdAndUpdate(comment.post, {
+      $pull: { comments: comment._id },
+    });
+
+    // delete comment doc
+    await Comment.findByIdAndDelete(commentId);
+
+    return res.json({ success: true, message: "Comment deleted" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};

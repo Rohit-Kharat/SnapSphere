@@ -1,115 +1,176 @@
-import React, { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import useGetUserProfile from '@/hooks/useGetUserProfile';
-import { Link, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { AtSign, Heart, MessageCircle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import useGetUserProfile from "@/hooks/useGetUserProfile";
+import { Link, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { AtSign, Heart, MessageCircle } from "lucide-react";
+import useGetUserPost from "@/hooks/useGetUserPost";
+import { followOrUnfollow } from "../api/userApi";
+import { useDispatch } from "react-redux";
+import { toggleFollowUser } from "@/redux/authSlice";
 
 const Profile = () => {
-  const params = useParams();
-  const userId = params.id;
+  const { id: userId } = useParams();
+const dispatch = useDispatch();
 
-  // Fetch user profile data
+  // Fetch data into redux
   useGetUserProfile(userId);
+  useGetUserPost();
 
-  const [activeTab, setActiveTab] = useState('posts');
+  const [activeTab, setActiveTab] = useState("posts");
+  const [btnLoading, setBtnLoading] = useState(false);
 
-  // Extract relevant data from Redux store
-  const { userProfile = {}, user = {} } = useSelector(store => store.auth);
+  const { userProfile = {}, user = {}, userPosts = [] } = useSelector(
+    (store) => store.auth
+  );
 
-  // Conditional checks
-  const isLoggedInUserProfile = user?._id === userProfile?._id;
-  const isFollowing = false; // Update this logic based on your application's state
+  const isLoggedInUserProfile = String(user?._id) === String(userProfile?._id);
 
-  // Handle tab switching
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
+  // ✅ Correct isFollowing logic (ObjectId/string safe)
+  const isFollowing = useMemo(() => {
+    if (!user?._id || !userProfile?._id) return false;
+    return (userProfile?.followers || []).some(
+      (uid) => String(uid) === String(user._id)
+    );
+  }, [user?._id, userProfile?._id, userProfile?.followers]);
 
-  // Safely access displayed posts
-  const displayedPosts = activeTab === 'posts' ? userProfile?.posts || [] : userProfile?.bookmarks || [];
+  // Tabs
+  const handleTabChange = (tab) => setActiveTab(tab);
+
+  // Show posts/saved
+  const displayedPosts =
+    activeTab === "posts"
+      ? isLoggedInUserProfile
+        ? userPosts
+        : userProfile?.posts || []
+      : isLoggedInUserProfile
+      ? user?.bookmarks || []
+      : userProfile?.bookmarks || [];
+
+  // ✅ Follow/Unfollow handler
+const handleFollowToggle = async () => {
+  if (!userProfile?._id) return;
+
+  try {
+    setBtnLoading(true);
+
+    const res = await followOrUnfollow(userProfile._id);
+    const followingNow = res.data?.following; // true / false
+
+    dispatch(
+      toggleFollowUser({
+        myId: user._id,
+        following: followingNow,
+      })
+    );
+  } catch (err) {
+    console.log(err);
+    alert(err?.response?.data?.message || "Something went wrong");
+  } finally {
+    setBtnLoading(false);
+  }
+};
 
   return (
     <div className="flex max-w-5xl justify-center mx-auto pl-10">
       <div className="flex flex-col gap-20 p-8">
-        {/* Profile Header */}
+        {/* Header */}
         <div className="grid grid-cols-2">
           <section className="flex items-center justify-center">
             <Avatar className="h-32 w-32">
-              <AvatarImage src={userProfile?.profilePicture || ''} alt="profilephoto" />
+              <AvatarImage src={userProfile?.profilePicture || ""} alt="profilephoto" />
               <AvatarFallback>CN</AvatarFallback>
             </Avatar>
           </section>
+
           <section>
             <div className="flex flex-col gap-5">
               <div className="flex items-center gap-2">
-                <span>{userProfile?.username || 'Unknown User'}</span>
+                <span>{userProfile?.username || "Unknown User"}</span>
+
                 {isLoggedInUserProfile ? (
-                  <>
-                    <Link to="/account/edit">
-                      <Button variant="secondary" className="hover:bg-gray-200 h-8">
-                        Edit profile
-                      </Button>
-                    </Link>
-                    <Button variant="secondary" className="hover:bg-gray-200 h-8">View archive</Button>
-                    <Button variant="secondary" className="hover:bg-gray-200 h-8">Ad tools</Button>
-                  </>
+                  <Link to="/account/edit">
+                    <Button variant="secondary" className="hover:bg-gray-200 h-8">
+                      Edit profile
+                    </Button>
+                  </Link>
                 ) : (
-                  isFollowing ? (
-                    <>
-                      <Button variant="secondary" className="h-8">Unfollow</Button>
-                      <Button variant="secondary" className="h-8">Message</Button>
-                    </>
-                  ) : (
-                    <Button className="bg-[#0095F6] hover:bg-[#3192d2] h-8">Follow</Button>
-                  )
+                  <>
+                    <Button
+                      onClick={handleFollowToggle}
+                      disabled={btnLoading}
+                      className={`h-8 ${
+                        isFollowing
+                          ? "bg-gray-200 text-black hover:bg-gray-300"
+                          : "bg-[#0095F6] hover:bg-[#3192d2]"
+                      }`}
+                    >
+                      {btnLoading ? "..." : isFollowing ? "Unfollow" : "Follow"}
+                    </Button>
+
+                    {isFollowing && (
+                      <Button variant="secondary" className="h-8">
+                        Message
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
+
               <div className="flex items-center gap-4">
-                <p><span className="font-semibold">{userProfile?.posts?.length || 0} </span>posts</p>
-                <p><span className="font-semibold">{userProfile?.followers?.length || 0} </span>followers</p>
-                <p><span className="font-semibold">{userProfile?.following?.length || 0} </span>following</p>
+                <p>
+                  <span className="font-semibold">{userProfile?.posts?.length || 0} </span>
+                  posts
+                </p>
+                <p>
+                  <span className="font-semibold">
+                    {userProfile?.followers?.length || 0}{" "}
+                  </span>
+                  followers
+                </p>
+                <p>
+                  <span className="font-semibold">
+                    {userProfile?.following?.length || 0}{" "}
+                  </span>
+                  following
+                </p>
               </div>
+
               <div className="flex flex-col gap-1">
-                <span className="font-semibold">{userProfile?.bio || 'bio here...'}</span>
+                <span className="font-semibold">{userProfile?.bio || "bio here..."}</span>
                 <Badge className="w-fit" variant="secondary">
-                  <AtSign /> <span className="pl-1">{userProfile?.username || 'Unknown User'}</span>
+                  <AtSign /> <span className="pl-1">{userProfile?.username || "Unknown User"}</span>
                 </Badge>
-                <span>MERN stack</span>
-                <span>🤯Let rock baby</span>
-                <span>🤏😎</span>
               </div>
             </div>
           </section>
         </div>
 
-        {/* Posts/Bookmarks Tabs */}
+        {/* Tabs */}
         <div className="border-t border-t-gray-200">
           <div className="flex items-center justify-center gap-10 text-sm">
             <span
-              className={`py-3 cursor-pointer ${activeTab === 'posts' ? 'font-bold' : ''}`}
-              onClick={() => handleTabChange('posts')}
+              className={`py-3 cursor-pointer ${activeTab === "posts" ? "font-bold" : ""}`}
+              onClick={() => handleTabChange("posts")}
             >
               POSTS
             </span>
             <span
-              className={`py-3 cursor-pointer ${activeTab === 'saved' ? 'font-bold' : ''}`}
-              onClick={() => handleTabChange('saved')}
+              className={`py-3 cursor-pointer ${activeTab === "saved" ? "font-bold" : ""}`}
+              onClick={() => handleTabChange("saved")}
             >
               SAVED
             </span>
-            <span className="py-3 cursor-pointer">REELS</span>
-            <span className="py-3 cursor-pointer">TAGS</span>
           </div>
 
-          {/* Displayed Posts */}
+          {/* Posts */}
           <div className="grid grid-cols-3 gap-1">
             {displayedPosts.map((post) => (
               <div key={post?._id} className="relative group cursor-pointer">
                 <img
-                  src={post?.image || 'https://via.placeholder.com/150'}
+                  src={post?.image || "https://via.placeholder.com/150"}
                   alt="postimage"
                   className="rounded-sm my-2 w-full aspect-square object-cover"
                 />

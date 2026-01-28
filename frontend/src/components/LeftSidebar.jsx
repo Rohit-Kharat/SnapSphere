@@ -14,10 +14,14 @@ import { Button } from './ui/button'
 const LeftSidebar = () => {
     const navigate = useNavigate();
     const { user } = useSelector(store => store.auth);
-    const { likeNotification } = useSelector(store => store.realTimeNotification);
+const likeNotification = useSelector(
+  (store) => store.realTimeNotification?.likeNotification
+) || [];
+
     const dispatch = useDispatch();
     const [open, setOpen] = useState(false);
 
+console.log("likeNotification:", likeNotification);
 
     const logoutHandler = async () => {
         try {
@@ -71,44 +75,60 @@ const LeftSidebar = () => {
             <div className='flex flex-col'>
                 <h1 className='my-8 pl-3 font-bold text-xl'>Social Media</h1>
                 <div>
-                    {
-                        sidebarItems.map((item, index) => {
-                            return (
-                                <div onClick={() => sidebarHandler(item.text)} key={index} className='flex items-center gap-3 relative hover:bg-gray-100 cursor-pointer rounded-lg p-3 my-3'>
-                                    {item.icon}
-                                    <span>{item.text}</span>
-                                    {
-                                        item.text === "Notifications" && likeNotification.length > 0 && (
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button size='icon' className="rounded-full h-5 w-5 bg-red-600 hover:bg-red-600 absolute bottom-6 left-6">{likeNotification.length}</Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent>
-                                                    <div>
-                                                        {
-                                                            likeNotification.length === 0 ? (<p>No new notification</p>) : (
-                                                                likeNotification.map((notification) => {
-                                                                    return (
-                                                                        <div key={notification.userId} className='flex items-center gap-2 my-2'>
-                                                                            <Avatar>
-                                                                                <AvatarImage src={notification.userDetails?.profilePicture} />
-                                                                                <AvatarFallback>CN</AvatarFallback>
-                                                                            </Avatar>
-                                                                            <p className='text-sm'><span className='font-bold'>{notification.userDetails?.username}</span> liked your post</p>
-                                                                        </div>
-                                                                    )
-                                                                })
-                                                            )
-                                                        }
-                                                    </div>
-                                                </PopoverContent>
-                                            </Popover>
-                                        )
-                                    }
-                                </div>
-                            )
-                        })
-                    }
+                    {sidebarItems.map((item, index) => {
+  // ✅ Special UI for Notifications
+  if (item.text === "Notifications") {
+    return (
+      <Popover key={index}>
+        <PopoverTrigger asChild>
+          <div
+            onClick={(e) => e.stopPropagation()} // prevent parent click side effects
+            className="flex items-center gap-3 relative hover:bg-gray-100 cursor-pointer rounded-lg p-3 my-3"
+          >
+            <Heart className="w-5 h-5" />
+            <span>Notifications</span>
+
+            {likeNotification?.length > 0 && (
+              <span className="absolute top-2 left-6 bg-red-600 text-white text-[10px] rounded-full px-1.5 py-0.5">
+                {likeNotification.length}
+              </span>
+            )}
+          </div>
+        </PopoverTrigger>
+
+        <PopoverContent onClick={(e) => e.stopPropagation()}>
+          {likeNotification?.length === 0 ? (
+            <p>No new notification</p>
+          ) : (
+            likeNotification.map((notification) => (
+              <div key={notification.userId} className="flex items-center gap-2 my-2">
+                <Avatar>
+                  <AvatarImage src={notification.userDetails?.profilePicture} />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+                <p className="text-sm">
+                  <span className="font-bold">{notification.userDetails?.username}</span> liked your post
+                </p>
+              </div>
+            ))
+          )}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  // ✅ Normal items
+  return (
+    <div
+      onClick={() => sidebarHandler(item.text)}
+      key={index}
+      className="flex items-center gap-3 relative hover:bg-gray-100 cursor-pointer rounded-lg p-3 my-3"
+    >
+      {item.icon}
+      <span>{item.text}</span>
+    </div>
+  );
+})}
                 </div>
             </div>
 
