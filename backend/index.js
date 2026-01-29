@@ -21,10 +21,11 @@ app.use(cookieParser());
 app.use(urlencoded({ extended: true }));
 
 const corsOptions = {
-    origin: 'http://localhost:5173',
-    credentials: true
-}
+  origin: process.env.CLIENT_URL,
+  credentials: true,
+};
 app.use(cors(corsOptions));
+
 
 app.use("/api/auth", authRoutes);
 const PORT = process.env.PORT || 3000;
