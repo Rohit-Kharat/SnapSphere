@@ -19,16 +19,16 @@ export const getReceiverSocketId = (receiverId) => userSocketMap[receiverId];
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId?.toString(); // ✅ HERE
-  console.log("✅ CONNECT", { socketId: socket.id, userId });
+  
 
   if (userId) userSocketMap[userId] = socket.id;
 
 
-  console.log("🧠 userSocketMap", userSocketMap);
+  
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {
-    console.log("❌ DISCONNECT", { socketId: socket.id, userId });
+    
     if (userId) delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
