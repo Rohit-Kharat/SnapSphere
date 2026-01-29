@@ -19,9 +19,27 @@ const CommentDialog = ({ open, setOpen }) => {
   const { selectedPost, posts } = useSelector((store) => store.post);
   const { user } = useSelector((store) => store.auth);
 
-  useEffect(() => {
-    setCommentList(selectedPost?.comments || []);
-  }, [selectedPost]);
+useEffect(() => {
+  const fetchComments = async () => {
+    try {
+      if (!selectedPost?._id || !open) return;
+
+      const res = await axios.get(
+        `http://localhost:8000/api/v1/post/${selectedPost._id}/comment/all`,
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setCommentList(res.data.comments);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  fetchComments();
+}, [selectedPost?._id, open]);
+
 
   const changeEventHandler = (e) => {
     const inputText = e.target.value;
@@ -42,20 +60,38 @@ const CommentDialog = ({ open, setOpen }) => {
       );
 
       if (res.data.success) {
-        const updated = [...commentList, res.data.comment];
-        setCommentList(updated);
+  const newComment = res.data.comment;
 
-        const updatedPosts = posts.map((p) =>
-          String(p._id) === String(selectedPost._id)
-            ? { ...p, comments: updated }
-            : p
-        );
-        dispatch(setPosts(updatedPosts));
-        dispatch(setSelectedPost({ ...selectedPost, comments: updated }));
+  // ✅ always add to dialog list (author can see own hidden/pending)
+  const updated = [...commentList, newComment];
+  setCommentList(updated);
 
-        toast.success(res.data.message);
-        setText("");
-      } else {
+  // ✅ Update redux post ONLY if approved (public list)
+  if (newComment.status === "approved") {
+    const updatedPosts = posts.map((p) =>
+      String(p._id) === String(selectedPost._id)
+        ? { ...p, comments: [...(p.comments || []), newComment] }
+        : p
+    );
+    dispatch(setPosts(updatedPosts));
+    dispatch(setSelectedPost({ ...selectedPost, comments: [...(selectedPost.comments || []), newComment] }));
+  }
+
+  toast.success(
+    newComment.status === "approved"
+      ? "Comment Added"
+      : newComment.status === "flagged"
+      ? "Comment added (under review)"
+      : newComment.status === "shadow"
+      ? "Comment added (hidden)"
+      : newComment.status === "rejected"
+      ? "Comment rejected"
+      : "Comment pending"
+  );
+
+  setText("");
+}
+ else {
         toast.error(res.data.message || "Failed to add comment");
       }
     } catch (error) {

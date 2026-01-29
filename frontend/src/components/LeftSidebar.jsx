@@ -21,7 +21,7 @@ const likeNotification = useSelector(
     const dispatch = useDispatch();
     const [open, setOpen] = useState(false);
 
-console.log("likeNotification:", likeNotification);
+
 
     const logoutHandler = async () => {
         try {

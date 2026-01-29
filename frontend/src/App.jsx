@@ -7,9 +7,7 @@ import MainLayout from "./components/MainLayout";
 import Profile from "./components/Profile";
 import Signup from "./components/Signup";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { io } from "socket.io-client";
 import { useDispatch, useSelector } from "react-redux";
-import { setSocket } from "./redux/socketSlice";
 import { setOnlineUsers } from "./redux/chatSlice";
 import { setLikeNotification } from "./redux/rtnSlice";
 import ProtectedRoutes from "./components/ProtectedRoutes";
@@ -18,6 +16,7 @@ import useGetMe from "@/hooks/useGetMe";
 import useGetRTM from "@/hooks/useGetRTM";
 import { Toaster } from "sonner";
 
+import { connectSocket, disconnectSocket } from "@/socket/socketClient"; // ✅ NEW
 
 const browserRouter = createBrowserRouter([
   {
@@ -28,98 +27,58 @@ const browserRouter = createBrowserRouter([
       </ProtectedRoutes>
     ),
     children: [
-      {
-        path: "/",
-        element: (
-          <ProtectedRoutes>
-            <Home />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/profile/:id",
-        element: (
-          <ProtectedRoutes>
-            {" "}
-            <Profile />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/account/edit",
-        element: (
-          <ProtectedRoutes>
-            <EditProfile />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/chat",
-        element: (
-          <ProtectedRoutes>
-            <ChatPage />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/auth/success",
-        element: <AuthSuccess />,
-      },
+      { path: "/", element: <ProtectedRoutes><Home /></ProtectedRoutes> },
+      { path: "/profile/:id", element: <ProtectedRoutes><Profile /></ProtectedRoutes> },
+      { path: "/account/edit", element: <ProtectedRoutes><EditProfile /></ProtectedRoutes> },
+      { path: "/chat", element: <ProtectedRoutes><ChatPage /></ProtectedRoutes> },
+      { path: "/auth/success", element: <AuthSuccess /> },
     ],
   },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
+  { path: "/login", element: <Login /> },
+  { path: "/signup", element: <Signup /> },
 ]);
 
 function App() {
-   useGetMe();
+  useGetMe();
+  useGetRTM();
+
   const { user } = useSelector((store) => store.auth);
-  const { socket } = useSelector((store) => store.socketio);
   const dispatch = useDispatch();
- useGetMe();
-  useGetRTM(); 
+
   useEffect(() => {
-    if (user) {
-      const socketio = io("http://localhost:8000", {
-        query: {
-          userId: user?._id,
-        },
-        transports: ["websocket"],
-      });
-      dispatch(setSocket(socketio));
-
-      // listen all the events
-      socketio.on("getOnlineUsers", (onlineUsers) => {
-        dispatch(setOnlineUsers(onlineUsers));
-      });
-
-      socketio.on("notification", (notification) => {
-         console.log("🔥 notification payload:", notification);
-        dispatch(setLikeNotification(notification));
-      });
-      socketio.on("newMessage", (m) => {
-    console.log("✅ FRONTEND GOT newMessage:", m);
-  });
-
-      return () => {
-        socketio.close();
-        dispatch(setSocket(null));
-      };
-    } else if (socket) {
-      socket.close();
-      dispatch(setSocket(null));
+    if (!user?._id) {
+      disconnectSocket();
+      return;
     }
-  }, [user, dispatch]);
+
+    const socketio = connectSocket(user._id);
+
+    // ✅ listeners
+    socketio.on("getOnlineUsers", (onlineUsers) => {
+      dispatch(setOnlineUsers(onlineUsers));
+    });
+
+    socketio.on("notification", (notification) => {
+      console.log("🔥 notification payload:", notification);
+      dispatch(setLikeNotification(notification));
+    });
+
+    socketio.on("newMessage", (m) => {
+      console.log("✅ FRONTEND GOT newMessage:", m);
+    });
+
+    // ✅ cleanup
+    return () => {
+      socketio.off("getOnlineUsers");
+      socketio.off("notification");
+      socketio.off("newMessage");
+      disconnectSocket();
+    };
+  }, [user?._id, dispatch]);
 
   return (
     <>
-       <Toaster position="top-right" richColors />  {/* ✅ popup */}
+      <Toaster position="top-right" richColors />
       <RouterProvider router={browserRouter} />
     </>
   );

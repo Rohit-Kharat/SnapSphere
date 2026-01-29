@@ -1,9 +1,13 @@
 import sharp from "sharp";
+import mongoose from "mongoose";
 import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
+import { runHeuristics } from "../services/moderation/heuristics.js";
+import { runHuggingFaceModeration  } from "../services/moderation/huggingfaceModeration.js";
+import { decideModeration } from "../services/moderation/decide.js";
 
 
 export const addNewPost = async (req, res) => {
@@ -169,55 +173,114 @@ if (postOwnerSocketId) {
 
     }
 }
-export const addComment = async (req,res) =>{
-    try {
-        const postId = req.params.id;
-        const commentKrneWalaUserKiId = req.id;
+export const addComment = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const commentKrneWalaUserKiId = req.id;
+    const { text } = req.body;
 
-        const {text} = req.body;
-
-        const post = await Post.findById(postId);
-
-        if(!text) return res.status(400).json({message:'text is required', success:false});
-
-        const comment = await Comment.create({
-            text,
-            author:commentKrneWalaUserKiId,
-            post:postId
-        })
-
-        await comment.populate({
-            path:'author',
-            select:"username profilePicture"
-        });
-        
-        post.comments.push(comment._id);
-        await post.save();
-
-        return res.status(201).json({
-            message:'Comment Added',
-            comment,
-            success:true
-        })
-
-    } catch (error) {
-        console.log(error);
+    if (!text?.trim()) {
+      return res.status(400).json({ message: "text is required", success: false });
     }
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Post not found", success: false });
+
+    // 1) create comment as pending
+    const comment = await Comment.create({
+      text: text.trim(),
+      author: commentKrneWalaUserKiId,
+      post: postId,
+      status: "pending",
+      moderation: { decision: "queue" },
+    });
+
+    // 2) heuristics
+    const h = runHeuristics(comment.text);
+
+    // 3) AI moderation (only if key exists)
+   let ai = {
+  aiProvider: "huggingface",
+  aiModel: process.env.HF_TOXIC_MODEL || "unitary/toxic-bert",
+  aiFlagged: false,
+  aiCategories: {},
+  aiScores: {},
 };
-export const getCommentsOfPost = async (req,res) => {
-    try {
-        const postId = req.params.id;
 
-        const comments = await Comment.find({post:postId}).populate('author', 'username profilePicture');
-
-        if(!comments) return res.status(404).json({message:'No comments found for this post', success:false});
-
-        return res.status(200).json({success:true,comments});
-
-    } catch (error) {
-        console.log(error);
-    }
+if (process.env.HF_API_TOKEN) {
+  ai = await runHuggingFaceModeration(comment.text);
 }
+
+
+    // 4) decide
+    const decision = decideModeration({
+      heuristicScore: h.heuristicScore,
+      heuristicReasons: h.heuristicReasons,
+      aiFlagged: ai.aiFlagged,
+      aiScores: ai.aiScores,
+    });
+
+    // 5) update comment
+    comment.status = decision.status;
+    comment.moderation = {
+      ...comment.moderation,
+      decision: decision.decision,
+      reason: decision.reason,
+      heuristicScore: h.heuristicScore,
+      heuristicReasons: h.heuristicReasons,
+      aiProvider: ai.aiProvider,
+      aiModel: ai.aiModel,
+      aiFlagged: ai.aiFlagged,
+      aiCategories: ai.aiCategories,
+      aiScores: ai.aiScores,
+    };
+    await comment.save();
+
+    // ✅ IMPORTANT:
+    // Push into Post.comments only if approved (so your getAllPost populate stays clean)
+    if (comment.status === "approved") {
+      post.comments.push(comment._id);
+      await post.save();
+    }
+
+    await comment.populate({ path: "author", select: "username profilePicture" });
+console.log("AI MODERATION RESULT:", {
+  provider: ai.aiProvider,
+  flagged: ai.aiFlagged,
+  scores: ai.aiScores,
+});
+
+    return res.status(201).json({
+      message: "Comment processed",
+      comment,
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+export const getCommentsOfPost = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.id;
+
+    const comments = await Comment.find({
+      post: new mongoose.Types.ObjectId(postId),
+      $or: [
+        { status: "approved" },
+        { author: new mongoose.Types.ObjectId(userId) }, // author can see own hidden
+      ],
+    })
+      .sort({ createdAt: 1 })
+      .populate("author", "username profilePicture");
+
+    return res.status(200).json({ success: true, comments });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 export const deletePost = async (req,res) => {
     try {
         const postId = req.params.id;
@@ -278,24 +341,16 @@ export const bookmarkPost = async (req,res) => {
 export const deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const userId = req.user._id;
+    const userId = req.id;
 
     const comment = await Comment.findById(commentId);
-    if (!comment) {
-      return res.status(404).json({ success: false, message: "Comment not found" });
-    }
+    if (!comment) return res.status(404).json({ success: false, message: "Comment not found" });
 
-    // allow only comment owner (you can also allow post owner if you want)
     if (String(comment.author) !== String(userId)) {
       return res.status(403).json({ success: false, message: "Not allowed" });
     }
 
-    // remove comment reference from post
-    await Post.findByIdAndUpdate(comment.post, {
-      $pull: { comments: comment._id },
-    });
-
-    // delete comment doc
+    await Post.findByIdAndUpdate(comment.post, { $pull: { comments: comment._id } });
     await Comment.findByIdAndDelete(commentId);
 
     return res.json({ success: true, message: "Comment deleted" });
@@ -304,3 +359,4 @@ export const deleteComment = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+

@@ -78,12 +78,35 @@ const Post = ({ post }) => {
       );
       console.log(res.data);
       if (res.data.success) {
-        const updatedCommentData = [...comment, res.data.comment];
-        setComment(updatedCommentData);
+        const newComment = res.data.comment;
 
-        const updatedPostData = posts.map((p) =>
-          p._id === post._id ? { ...p, comments: updatedCommentData } : p,
-        );
+// Always clear input + toast
+setText("");
+
+// ✅ If approved → show in public feed comments
+if (newComment.status === "approved") {
+  const updatedCommentData = [...comment, newComment];
+  setComment(updatedCommentData);
+
+  const updatedPostData = posts.map((p) =>
+    p._id === post._id ? { ...p, comments: updatedCommentData } : p
+  );
+
+  dispatch(setPosts(updatedPostData));
+} else {
+  // ❗ Not approved → do NOT add to feed public comments
+  // You can optionally show message to user
+  toast.message(
+    newComment.status === "flagged"
+      ? "Your comment is under review."
+      : newComment.status === "shadow"
+      ? "Your comment is hidden (spam detected)."
+      : newComment.status === "rejected"
+      ? "Your comment was rejected."
+      : "Your comment is pending."
+  );
+}
+
 
         dispatch(setPosts(updatedPostData));
         toast.success(res.data.message);
@@ -206,20 +229,23 @@ const Post = ({ post }) => {
       </div>
       <span className="font-medium block mb-2">{postLike} likes</span>
       <p>
-        <span className="font-medium mr-2">{post.author?.username}</span>
-        {post.caption}
-      </p>
-      {comment.length > 0 && (
-        <span
-          onClick={() => {
-            dispatch(setSelectedPost(post));
-            setOpen(true);
-          }}
-          className="cursor-pointer text-sm text-gray-400"
-        >
-          View all {comment.length} comments
-        </span>
-      )}
+  <span className="font-medium mr-2">{post.author?.username}</span>
+  {post.caption}
+</p>
+
+{/* View all comments */}
+{comment.length > 0 && (
+  <span
+    onClick={() => {
+      dispatch(setSelectedPost(post));
+      setOpen(true);
+    }}
+    className="cursor-pointer text-sm text-gray-400"
+  >
+    View all {comment.length} comments
+  </span>
+)}
+
       <CommentDialog open={open} setOpen={setOpen} />
       <div className="flex items-center justify-between">
         <input
