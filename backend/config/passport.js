@@ -1,8 +1,8 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { User } from "../models/user.model.js"; // OR use default based on your export
+import { User } from "../models/user.model.js"; 
 
-// helper: make username URL/DB safe
+
 const slugify = (str = "") =>
   str
     .toLowerCase()
@@ -10,7 +10,6 @@ const slugify = (str = "") =>
     .replace(/\s+/g, "")
     .replace(/[^a-z0-9]/g, "");
 
-// helper: ensure username is unique
 const generateUniqueUsername = async (base, User) => {
   let username = slugify(base) || "user";
   let exists = await User.findOne({ username });
