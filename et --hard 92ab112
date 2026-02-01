@@ -1,0 +1,25 @@
+[33m55881d9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m fix: export named + default api
+[33m8f57c7c[m fix: export named + default api
+[33m715bca0[m fix: standardize axios default import
+[33m6e4bbdc[m fix: use default api import
+[33m5dc63bd[m Fix axios default export for Vercel build
+[33md7d3078[m Fix axios default export for Vercel build
+[33ma51c321[m Fix API client path and remove localhost
+[33mee70813[m Fix API client path and remove localhost
+[33md8dffbf[m Fix API client path and remove localhost
+[33m54424fb[m Fix API client path and remove localhost
+[33me5bc032[m Fix API client path and remove localhost
+[33m17a3040[m Fix Socket.IO connection to use env API URL
+[33ma6a1900[m Use VITE_API_URL for API requests
+[33m0787f99[m Remove the coment
+[33md6fd4b7[m Input to input
+[33m7fd4093[m Button to button
+[33mf3925e1[m Update dependencies and lock file
+[33mc393e3c[m Remove wrong sonner import
+[33mce93518[m Add axios dependency for moderation service
+[33mbbd0680[m cors
+[33mac6df6d[m start
+[33m7e8d136[m Your update message
+[33m3d82659[m Cleanup env handling and update project
+[33mef8b5f1[m Initial commit
+[33m24ea642[m Initial commit with backend and frontend
