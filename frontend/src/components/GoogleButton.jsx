@@ -3,8 +3,11 @@ import { Button } from "./ui/button";
 
 const GoogleButton = ({ text = "Continue with Google" }) => {
   const handleGoogleAuth = () => {
-    // full page redirect is required for OAuth
-    window.location.href = "http://localhost:8000/api/auth/google";
+    // Extract backend origin from API URL
+    const backendOrigin = import.meta.env.VITE_API_URL.replace("/api/v1", "");
+
+    // Full page redirect (required for OAuth)
+    window.location.href = `${backendOrigin}/api/auth/google`;
   };
 
   return (
@@ -14,7 +17,6 @@ const GoogleButton = ({ text = "Continue with Google" }) => {
       onClick={handleGoogleAuth}
       className="w-full flex items-center justify-center gap-2"
     >
-      {/* Simple G icon (no extra lib) */}
       <span className="text-lg">G</span>
       {text}
     </Button>

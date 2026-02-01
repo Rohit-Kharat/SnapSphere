@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "@/api/axios";
 import { setAuthUser } from "@/redux/authSlice";
 import { toast } from "sonner";
 
@@ -12,11 +12,9 @@ const AuthSuccess = () => {
   useEffect(() => {
     const loadMe = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/v1/user/me", {
-          withCredentials: true,
-        });
+        const res = await api.get("/user/me"); // baseURL already has /api/v1
 
-        if (res.data.success) {
+        if (res.data?.success) {
           dispatch(setAuthUser(res.data.user));
           toast.success("Logged in with Google");
           navigate("/", { replace: true });

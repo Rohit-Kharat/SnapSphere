@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import axios from "axios";
+import api from "@/api/axios";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "@/redux/authSlice";
 
@@ -9,16 +9,13 @@ const useGetMe = () => {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/v1/user/me", {
-          withCredentials: true,
-        });
+        const res = await api.get("/user/me");
 
         if (res.data?.success) {
           dispatch(setAuthUser(res.data.user)); // ✅ user now has populated bookmarks
         }
       } catch (err) {
-        // if not logged in, ignore
-        // console.log("getMe error:", err?.response?.data || err.message);
+        // not logged in → silently ignore
       }
     };
 

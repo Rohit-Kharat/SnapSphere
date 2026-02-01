@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import axios from "axios";
+import api from "@/api/axios";
 import { useDispatch } from "react-redux";
 import { setUserPosts } from "@/redux/authSlice";
 
@@ -9,10 +9,7 @@ const useGetUserPost = () => {
   useEffect(() => {
     const fetchUserPosts = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/post/userpost/all",
-          { withCredentials: true }
-        );
+        const res = await api.get("/post/userpost/all");
 
         if (res.data?.success) {
           dispatch(setUserPosts(res.data.posts || []));

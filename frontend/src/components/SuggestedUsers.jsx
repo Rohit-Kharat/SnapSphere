@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "@/api/axios";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import useGetSuggestedUsers from "@/hooks/useGetSuggestedUsers";
 
@@ -13,7 +13,10 @@ const SuggestedUsers = () => {
   const [seeAll, setSeeAll] = useState(false);
 
   // local follow toggle (instant UI)
-  const [followingSet, setFollowingSet] = useState(new Set(user?.following || []));
+  const [followingSet, setFollowingSet] = useState(
+    new Set(user?.following || [])
+  );
+
   useEffect(() => {
     setFollowingSet(new Set(user?.following || []));
   }, [user]);
@@ -23,7 +26,7 @@ const SuggestedUsers = () => {
   const handleFollow = async (targetUserId) => {
     const wasFollowing = followingSet.has(targetUserId);
 
-    // optimistic
+    // optimistic update
     setFollowingSet((prev) => {
       const next = new Set(prev);
       if (wasFollowing) next.delete(targetUserId);
@@ -34,18 +37,14 @@ const SuggestedUsers = () => {
     try {
       setLoadingId(targetUserId);
 
-      await axios.post(
-        `http://localhost:8000/api/v1/user/followorunfollow/${targetUserId}`,
-        {},
-        { withCredentials: true }
-      );
+      await api.post(`/user/followorunfollow/${targetUserId}`);
 
-      // optional refresh
+      // optional refresh (keeps list accurate)
       refetchSuggestedUsers?.();
     } catch (error) {
       console.log(error);
 
-      // rollback
+      // rollback on error
       setFollowingSet((prev) => {
         const next = new Set(prev);
         if (wasFollowing) next.add(targetUserId);
@@ -76,10 +75,9 @@ const SuggestedUsers = () => {
         </button>
       </div>
 
-      {/* Animated container */}
       <div
         className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          seeAll ? "max-h-[1200px] opacity-100" : "max-h-[420px] opacity-100"
+          seeAll ? "max-h-[1200px]" : "max-h-[420px]"
         }`}
       >
         {visibleUsers.map((u) => {
@@ -89,9 +87,7 @@ const SuggestedUsers = () => {
           return (
             <div
               key={u._id}
-              className={`flex items-center justify-between my-5 transform transition-all duration-300 ${
-                seeAll ? "translate-y-0 opacity-100" : "translate-y-0 opacity-100"
-              }`}
+              className="flex items-center justify-between my-5"
             >
               <div className="flex items-center gap-2">
                 <Link to={`/profile/${u._id}`}>
@@ -101,7 +97,10 @@ const SuggestedUsers = () => {
                       alt={`${u?.username}'s profile`}
                     />
                     <AvatarFallback>
-                      {u?.username?.split(" ").map((name) => name[0]).join("") || "NA"}
+                      {u?.username
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("") || "NA"}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
@@ -110,7 +109,9 @@ const SuggestedUsers = () => {
                   <h1 className="font-semibold text-sm">
                     <Link to={`/profile/${u._id}`}>{u?.username}</Link>
                   </h1>
-                  <span className="text-gray-600 text-sm">{u?.bio || "Bio here..."}</span>
+                  <span className="text-gray-600 text-sm">
+                    {u?.bio || "Bio here..."}
+                  </span>
                 </div>
               </div>
 
