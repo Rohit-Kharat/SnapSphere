@@ -5,34 +5,42 @@ import { toast } from "sonner";
 
 const useGetRTM = () => {
   const dispatch = useDispatch();
+
   const { socket } = useSelector((store) => store.socketio);
   const { user } = useSelector((store) => store.auth);
   const { activeChatUserId } = useSelector((store) => store.chat);
 
+  const myId = user?._id;
+
   useEffect(() => {
-    if (!socket) return;
+    // ✅ do nothing until socket + user ready
+    if (!socket || !myId) return;
 
     const handler = (m) => {
-      // 1️⃣ add message to store
+      // ✅ Always push message to store
       dispatch(pushMessage(m));
 
-      // 2️⃣ only receiver should get unread + toast
-      if (m?.receiverId?.toString() === user?._id?.toString()) {
-        const senderId = m?.senderId?.toString();
+      const receiverId = m?.receiverId ? String(m.receiverId) : "";
+      const senderId = m?.senderId ? String(m.senderId) : "";
 
-        console.log("UNREAD CHECK sender:", senderId);
-
-        // 3️⃣ unread only if that sender chat is NOT open
-        if (senderId && senderId !== activeChatUserId) {
+      // ✅ only receiver should get unread + toast
+      if (receiverId === String(myId)) {
+        // ✅ unread only if that sender chat is NOT open
+        if (senderId && senderId !== String(activeChatUserId || "")) {
           dispatch(incrementUnread(senderId));
           toast(`New message: ${m?.message ?? ""}`);
         }
       }
     };
 
+    // ✅ prevent double listener
+    socket.off("newMessage", handler);
     socket.on("newMessage", handler);
-    return () => socket.off("newMessage", handler);
-  }, [socket, dispatch, user?._id, activeChatUserId]);
+
+    return () => {
+      socket.off("newMessage", handler);
+    };
+  }, [socket, myId, dispatch, activeChatUserId]);
 };
 
 export default useGetRTM;
