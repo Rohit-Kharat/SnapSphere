@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Bookmark, MessageCircle, MoreHorizontal, Send } from "lucide-react";
@@ -23,12 +23,10 @@ const Post = ({ post }) => {
 
   const myId = user?._id;
 
-  // ✅ SAFE INITIAL STATE
   const [liked, setLiked] = useState(() => post?.likes?.includes(myId) || false);
   const [postLike, setPostLike] = useState(() => post?.likes?.length || 0);
   const [comment, setComment] = useState(() => post?.comments || []);
 
-  // ✅ If user loads later (after /me API), update liked state
   useEffect(() => {
     setLiked(post?.likes?.includes(myId) || false);
   }, [myId, post?.likes]);
@@ -40,13 +38,9 @@ const Post = ({ post }) => {
 
   const likeOrDislikeHandler = async () => {
     try {
-      if (!myId) {
-        toast.error("Please login again.");
-        return;
-      }
+      if (!myId) return toast.error("Please login again.");
 
       const action = liked ? "dislike" : "like";
-
       const res = await axios.get(
         `https://snapsphere-jwj8.onrender.com/api/v1/post/${post?._id}/${action}`,
         { withCredentials: true }
@@ -57,7 +51,6 @@ const Post = ({ post }) => {
         setPostLike(updatedLikes);
         setLiked(!liked);
 
-        // ✅ update post list in redux
         const updatedPostData = (posts || []).map((p) =>
           String(p._id) === String(post?._id)
             ? {
@@ -70,7 +63,6 @@ const Post = ({ post }) => {
         );
 
         dispatch(setPosts(updatedPostData));
-        toast.success(res.data.message);
       }
     } catch (error) {
       console.log(error);
@@ -94,10 +86,8 @@ const Post = ({ post }) => {
       if (res.data.success) {
         const newComment = res.data.comment;
 
-        // Always clear input
         setText("");
 
-        // ✅ If approved → show in public feed comments
         if (newComment?.status === "approved") {
           const updatedCommentData = [...(comment || []), newComment];
           setComment(updatedCommentData);
@@ -111,7 +101,6 @@ const Post = ({ post }) => {
           dispatch(setPosts(updatedPostData));
           toast.success("Comment added");
         } else {
-          // Not approved → do not add to public comments
           toast.message(
             newComment?.status === "flagged"
               ? "Your comment is under review."
@@ -158,9 +147,7 @@ const Post = ({ post }) => {
         `https://snapsphere-jwj8.onrender.com/api/v1/post/${post?._id}/bookmark`,
         { withCredentials: true }
       );
-      if (res.data.success) {
-        toast.success(res.data.message);
-      }
+      if (res.data.success) toast.success(res.data.message);
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message || "Failed to bookmark");
@@ -182,17 +169,14 @@ const Post = ({ post }) => {
 
             <div className="flex items-center gap-3">
               <h1>{post?.author?.username}</h1>
-
-              {/* ✅ SAFE CHECK */}
-              {user?._id === post?.author?._id && (
+              {String(myId) === String(post?.author?._id) && (
                 <Badge variant="secondary">Author</Badge>
               )}
             </div>
           </Link>
         </div>
 
-        {/* ✅ Only post owner sees menu */}
-        {String(user?._id) === String(post?.author?._id) && (
+        {String(myId) === String(post?.author?._id) && (
           <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
             <DialogTrigger asChild>
               <MoreHorizontal className="cursor-pointer" />
@@ -257,7 +241,6 @@ const Post = ({ post }) => {
         {post?.caption}
       </p>
 
-      {/* ✅ View all comments */}
       {(comment?.length || 0) > 0 && (
         <span
           onClick={() => {
@@ -282,10 +265,7 @@ const Post = ({ post }) => {
         />
 
         {text && (
-          <span
-            onClick={commentHandler}
-            className="text-[#3BADF8] cursor-pointer"
-          >
+          <span onClick={commentHandler} className="text-[#3BADF8] cursor-pointer">
             Post
           </span>
         )}
