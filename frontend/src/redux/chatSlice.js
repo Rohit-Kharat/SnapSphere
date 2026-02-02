@@ -10,32 +10,56 @@ const chatSlice = createSlice({
   },
   reducers: {
     setOnlineUsers: (state, action) => {
-      state.onlineUsers = action.payload;
+      state.onlineUsers = action.payload || [];
     },
 
     setMessages: (state, action) => {
-      state.messages = action.payload;
+      state.messages = action.payload || [];
     },
 
+    // ✅ push + prevent duplicates
     pushMessage: (state, action) => {
-      state.messages.push(action.payload);
+      const msg = action.payload;
+      if (!msg) return;
+
+      // if your message has _id from DB, dedupe using that
+      if (msg._id) {
+        const exists = state.messages.some((m) => String(m?._id) === String(msg._id));
+        if (exists) return;
+      } else {
+        // fallback dedupe (optional)
+        const exists = state.messages.some(
+          (m) =>
+            String(m?.senderId) === String(msg?.senderId) &&
+            String(m?.receiverId) === String(msg?.receiverId) &&
+            String(m?.message) === String(msg?.message) &&
+            String(m?.createdAt) === String(msg?.createdAt)
+        );
+        if (exists) return;
+      }
+
+      state.messages.push(msg);
     },
 
     // ✅ increment unread badge
     incrementUnread: (state, action) => {
       const userId = action.payload;
+      if (!userId) return;
+
       state.unreadCounts[userId] = (state.unreadCounts[userId] || 0) + 1;
     },
 
     // ✅ clear unread when chat opened
     clearUnread: (state, action) => {
       const userId = action.payload;
+      if (!userId) return;
+
       state.unreadCounts[userId] = 0;
     },
 
     // ✅ mark active chat
     setActiveChatUserId: (state, action) => {
-      state.activeChatUserId = action.payload;
+      state.activeChatUserId = action.payload || null;
     },
   },
 });
@@ -46,7 +70,7 @@ export const {
   pushMessage,
   incrementUnread,
   clearUnread,
-  setActiveChatUserId, // ✅ EXPORT EXISTS NOW
+  setActiveChatUserId,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
