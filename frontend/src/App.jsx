@@ -20,14 +20,7 @@ import { connectSocket, disconnectSocket } from "@/socket/socketClient";
 import { setSocket } from "@/redux/socketSlice"; // ✅ ADD THIS
 
 const browserRouter = createBrowserRouter([
-  // ✅ OAuth landing page should be PUBLIC (no ProtectedRoutes)
-  { path: "/auth/success", element: <AuthSuccess /> },
-
-  // ✅ Public routes
-  { path: "/login", element: <Login /> },
-  { path: "/signup", element: <Signup /> },
-
-  // ✅ Protected app shell with layout
+  
   {
     path: "/",
     element: (
@@ -36,14 +29,16 @@ const browserRouter = createBrowserRouter([
       </ProtectedRoutes>
     ),
     children: [
-      { index: true, element: <Home /> },              // ✅ home
-      { path: "profile/:id", element: <Profile /> },   // ✅ no leading /
-      { path: "account/edit", element: <EditProfile /> },
-      { path: "chat", element: <ChatPage /> },
+      { path: "/", element: <ProtectedRoutes><Home /></ProtectedRoutes> },
+      { path: "/profile/:id", element: <ProtectedRoutes><Profile /></ProtectedRoutes> },
+      { path: "/account/edit", element: <ProtectedRoutes><EditProfile /></ProtectedRoutes> },
+      { path: "/chat", element: <ProtectedRoutes><ChatPage /></ProtectedRoutes> },
+      { path: "/auth/success", element: <AuthSuccess /> },
     ],
   },
+  { path: "/login", element: <Login /> },
+  { path: "/signup", element: <Signup /> },
 ]);
-
 
 function App() {
   useGetMe();
