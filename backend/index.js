@@ -13,18 +13,31 @@ import { app, server } from "./socket/socket.js";
 import passport from "passport";
 import { setupPassport } from "./config/passport.js";
 import authRoutes from "./routes/auth.routes.js";
+app.set("trust proxy", 1);
 
 setupPassport();
+
 app.use(passport.initialize());
 app.use(express.json());
 app.use(cookieParser());
 app.use(urlencoded({ extended: true }));
 
-const corsOptions = {
-  origin: process.env.CLIENT_URL,
+const normalize = (url) => url?.replace(/\/$/, "");
+
+const allowedOrigins = [
+  normalize(process.env.CLIENT_URL),
+  "http://localhost:5173",
+];
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(normalize(origin))) return cb(null, true);
+    return cb(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
-};
-app.use(cors(corsOptions));
+}));
+
 
 
 app.use("/api/auth", authRoutes);
