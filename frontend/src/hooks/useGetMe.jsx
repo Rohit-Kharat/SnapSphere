@@ -9,7 +9,7 @@ const useGetMe = () => {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/v1/user/me", {
+        const res = await axios.get("https://snapsphere-jwj8.onrender.com/api/v1/user/me", {
           withCredentials: true,
         });
 
