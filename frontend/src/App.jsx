@@ -17,6 +17,7 @@ import useGetRTM from "@/hooks/useGetRTM";
 import { Toaster } from "sonner";
 
 import { connectSocket, disconnectSocket } from "@/socket/socketClient";
+import { setSocket } from "@/redux/socketSlice"; // ✅ ADD THIS
 
 const browserRouter = createBrowserRouter([
   {
@@ -40,21 +41,25 @@ const browserRouter = createBrowserRouter([
 
 function App() {
   useGetMe();
+  useGetRTM();
 
   const { user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
 
-  // ✅ Run RTM hook only after user is available (prevents early socket events)
-  useGetRTM(user?._id);
-
   useEffect(() => {
+    // if user not logged in → disconnect + clear redux socket
     if (!user?._id) {
       disconnectSocket();
+      dispatch(setSocket(null));
       return;
     }
 
     const socketio = connectSocket(user._id);
 
+    // ✅ store in redux so hooks can access it
+    dispatch(setSocket(socketio));
+
+    // listeners
     socketio.on("getOnlineUsers", (onlineUsers) => {
       dispatch(setOnlineUsers(onlineUsers));
     });
@@ -63,15 +68,12 @@ function App() {
       dispatch(setLikeNotification(notification));
     });
 
-    socketio.on("newMessage", (m) => {
-      console.log("✅ FRONTEND GOT newMessage:", m);
-    });
-
+    // cleanup
     return () => {
       socketio.off("getOnlineUsers");
       socketio.off("notification");
-      socketio.off("newMessage");
       disconnectSocket();
+      dispatch(setSocket(null));
     };
   }, [user?._id, dispatch]);
 
