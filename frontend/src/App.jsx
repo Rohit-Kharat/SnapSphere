@@ -20,6 +20,7 @@ import { connectSocket, disconnectSocket } from "@/socket/socketClient";
 import { setSocket } from "@/redux/socketSlice"; // ✅ ADD THIS
 
 const browserRouter = createBrowserRouter([
+  { path: "/auth/success", element: <AuthSuccess /> },// ✅ top-level
   {
     path: "/",
     element: (
@@ -32,7 +33,7 @@ const browserRouter = createBrowserRouter([
       { path: "/profile/:id", element: <ProtectedRoutes><Profile /></ProtectedRoutes> },
       { path: "/account/edit", element: <ProtectedRoutes><EditProfile /></ProtectedRoutes> },
       { path: "/chat", element: <ProtectedRoutes><ChatPage /></ProtectedRoutes> },
-      { path: "/auth/success", element: <AuthSuccess /> },
+      
     ],
   },
   { path: "/login", element: <Login /> },
