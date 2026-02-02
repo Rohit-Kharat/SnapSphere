@@ -1,21 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { Link, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { AtSign, Heart, MessageCircle } from "lucide-react";
 import useGetUserPost from "@/hooks/useGetUserPost";
 import { followOrUnfollow } from "../api/userApi";
-import { useDispatch } from "react-redux";
 import { toggleFollowUser } from "@/redux/authSlice";
 
 const Profile = () => {
   const { id: userId } = useParams();
-const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-  // Fetch data into redux
   useGetUserProfile(userId);
   useGetUserPost();
 
@@ -26,20 +24,18 @@ const dispatch = useDispatch();
     (store) => store.auth
   );
 
-  const isLoggedInUserProfile = String(user?._id) === String(userProfile?._id);
+  const myId = user?._id;
+  const profileId = userProfile?._id;
 
-  // ✅ Correct isFollowing logic (ObjectId/string safe)
+  const isLoggedInUserProfile = String(myId) === String(profileId);
+
   const isFollowing = useMemo(() => {
-    if (!user?._id || !userProfile?._id) return false;
+    if (!myId || !profileId) return false;
     return (userProfile?.followers || []).some(
-      (uid) => String(uid) === String(user._id)
+      (uid) => String(uid) === String(myId)
     );
-  }, [user?._id, userProfile?._id, userProfile?.followers]);
+  }, [myId, profileId, userProfile?.followers]);
 
-  // Tabs
-  const handleTabChange = (tab) => setActiveTab(tab);
-
-  // Show posts/saved
   const displayedPosts =
     activeTab === "posts"
       ? isLoggedInUserProfile
@@ -49,34 +45,33 @@ const dispatch = useDispatch();
       ? user?.bookmarks || []
       : userProfile?.bookmarks || [];
 
-  // ✅ Follow/Unfollow handler
-const handleFollowToggle = async () => {
-  if (!userProfile?._id) return;
+  const handleFollowToggle = async () => {
+    if (!profileId) return;
+    if (!myId) return alert("Please login again");
 
-  try {
-    setBtnLoading(true);
+    try {
+      setBtnLoading(true);
 
-    const res = await followOrUnfollow(userProfile._id);
-    const followingNow = res.data?.following; // true / false
+      const res = await followOrUnfollow(profileId);
+      const followingNow = res.data?.following;
 
-    dispatch(
-      toggleFollowUser({
-        myId: user._id,
-        following: followingNow,
-      })
-    );
-  } catch (err) {
-    console.log(err);
-    alert(err?.response?.data?.message || "Something went wrong");
-  } finally {
-    setBtnLoading(false);
-  }
-};
+      dispatch(
+        toggleFollowUser({
+          myId,
+          following: followingNow,
+        })
+      );
+    } catch (err) {
+      console.log(err);
+      alert(err?.response?.data?.message || "Something went wrong");
+    } finally {
+      setBtnLoading(false);
+    }
+  };
 
   return (
     <div className="flex max-w-5xl justify-center mx-auto pl-10">
       <div className="flex flex-col gap-20 p-8">
-        {/* Header */}
         <div className="grid grid-cols-2">
           <section className="flex items-center justify-center">
             <Avatar className="h-32 w-32">
@@ -125,15 +120,11 @@ const handleFollowToggle = async () => {
                   posts
                 </p>
                 <p>
-                  <span className="font-semibold">
-                    {userProfile?.followers?.length || 0}{" "}
-                  </span>
+                  <span className="font-semibold">{userProfile?.followers?.length || 0} </span>
                   followers
                 </p>
                 <p>
-                  <span className="font-semibold">
-                    {userProfile?.following?.length || 0}{" "}
-                  </span>
+                  <span className="font-semibold">{userProfile?.following?.length || 0} </span>
                   following
                 </p>
               </div>
@@ -148,24 +139,22 @@ const handleFollowToggle = async () => {
           </section>
         </div>
 
-        {/* Tabs */}
         <div className="border-t border-t-gray-200">
           <div className="flex items-center justify-center gap-10 text-sm">
             <span
               className={`py-3 cursor-pointer ${activeTab === "posts" ? "font-bold" : ""}`}
-              onClick={() => handleTabChange("posts")}
+              onClick={() => setActiveTab("posts")}
             >
               POSTS
             </span>
             <span
               className={`py-3 cursor-pointer ${activeTab === "saved" ? "font-bold" : ""}`}
-              onClick={() => handleTabChange("saved")}
+              onClick={() => setActiveTab("saved")}
             >
               SAVED
             </span>
           </div>
 
-          {/* Posts */}
           <div className="grid grid-cols-3 gap-1">
             {displayedPosts.map((post) => (
               <div key={post?._id} className="relative group cursor-pointer">
