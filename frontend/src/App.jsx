@@ -16,7 +16,7 @@ import useGetMe from "@/hooks/useGetMe";
 import useGetRTM from "@/hooks/useGetRTM";
 import { Toaster } from "sonner";
 
-import { connectSocket, disconnectSocket } from "@/socket/socketClient"; // ✅ NEW
+import { connectSocket, disconnectSocket } from "@/socket/socketClient";
 
 const browserRouter = createBrowserRouter([
   {
@@ -40,10 +40,12 @@ const browserRouter = createBrowserRouter([
 
 function App() {
   useGetMe();
-  useGetRTM();
 
   const { user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
+
+  // ✅ Run RTM hook only after user is available (prevents early socket events)
+  useGetRTM(user?._id);
 
   useEffect(() => {
     if (!user?._id) {
@@ -53,13 +55,11 @@ function App() {
 
     const socketio = connectSocket(user._id);
 
-    // ✅ listeners
     socketio.on("getOnlineUsers", (onlineUsers) => {
       dispatch(setOnlineUsers(onlineUsers));
     });
 
     socketio.on("notification", (notification) => {
-      console.log("🔥 notification payload:", notification);
       dispatch(setLikeNotification(notification));
     });
 
@@ -67,7 +67,6 @@ function App() {
       console.log("✅ FRONTEND GOT newMessage:", m);
     });
 
-    // ✅ cleanup
     return () => {
       socketio.off("getOnlineUsers");
       socketio.off("notification");
