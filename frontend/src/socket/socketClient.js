@@ -8,12 +8,12 @@ export const getSocket = () => socket;
 export const connectSocket = (userId) => {
   if (!userId) return null;
 
-  // 🔁 if same user already connected, reuse
+  // if same user already connected, reuse
   if (socket && socket.connected && currentUserId === userId) {
     return socket;
   }
 
-  // ❌ different user or stale socket → disconnect first
+  // different user or stale socket -> disconnect first
   if (socket) {
     socket.disconnect();
     socket = null;
