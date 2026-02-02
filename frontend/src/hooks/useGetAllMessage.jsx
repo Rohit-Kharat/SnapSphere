@@ -4,32 +4,29 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const useGetAllMessage = () => {
-    const dispatch = useDispatch();
-    const { selectedUser } = useSelector((store) => store.auth);
+  const dispatch = useDispatch();
+  const { selectedUser } = useSelector((store) => store.auth);
 
-    useEffect(() => {
-        if (!selectedUser?._id) return; // Ensure the selectedUser exists before making the API call.
+  useEffect(() => {
+    if (!selectedUser?._id) return;
 
-        const fetchAllMessages = async () => {
-            try {
-                const res = await axios.get(
-                    `https://snapsphere-jwj8.onrender.com/api/v1/message/all/${selectedUser._id}`,
-                    { withCredentials: true }
-                );
-                if (res.data.success) {
-                    dispatch(setMessages(res.data.messages));
-                }
-            } catch (error) {
-                console.error("Failed to fetch messages:", error);
-                // Optional: Dispatch an error to Redux or show a notification.
-            }
-        };
+    const fetchAllMessages = async () => {
+      try {
+        const res = await axios.get(
+          `https://snapsphere-jwj8.onrender.com/api/v1/message/all/${selectedUser._id}`,
+          { withCredentials: true }
+        );
 
-        // Immediately invoke the async function
-        (async () => {
-            await fetchAllMessages();
-        })();
-    }, [selectedUser, dispatch]); // Include dispatch in the dependency array.
+        if (res.data.success) {
+          dispatch(setMessages(res.data.messages));
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    };
+
+    fetchAllMessages();
+  }, [selectedUser?._id, dispatch]);
 };
 
 export default useGetAllMessage;
