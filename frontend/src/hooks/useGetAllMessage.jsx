@@ -16,20 +16,13 @@ const useGetAllMessage = () => {
           `https://snapsphere-jwj8.onrender.com/api/v1/message/all/${selectedUser._id}`,
           { withCredentials: true }
         );
-                if (res.data.success) {
-                    dispatch(setMessages(res.data.messages));
-                }
-            } catch (error) {
-                console.error("Failed to fetch messages:", error);
-                // Optional: Dispatch an error to Redux or show a notification.
-            }
-        };
 
         if (res.data.success) {
           dispatch(setMessages(res.data.messages));
         }
       } catch (error) {
         console.error("Failed to fetch messages:", error);
+        // Optional: Dispatch an error to Redux or show a notification.
       }
     };
 
