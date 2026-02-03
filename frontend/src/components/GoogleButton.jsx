@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 const GoogleButton = ({ text = "Continue with Google" }) => {
   const handleGoogleAuth = () => {
     // full page redirect is required for OAuth
-    window.location.href = "https://snapsphere-jwj8.onrender.com/api/auth/google";
+    window.location.href = "http://localhost:8000/api/auth/google";
   };
 
   return (

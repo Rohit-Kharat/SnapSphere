@@ -21,7 +21,7 @@ export const connectSocket = (userId) => {
 
   currentUserId = userId;
 
-  socket = io("https://snapsphere-jwj8.onrender.com", {
+  socket = io("http://localhost:8000", {
     query: { userId },
     withCredentials: true,
     transports: ["websocket", "polling"],

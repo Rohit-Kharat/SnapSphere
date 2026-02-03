@@ -42,8 +42,13 @@ const Post = ({ post }) => {
 
       const action = liked ? "dislike" : "like";
       const res = await axios.get(
+<<<<<<< HEAD
         `https://snapsphere-jwj8.onrender.com/api/v1/post/${post?._id}/${action}`,
         { withCredentials: true }
+=======
+        `http://localhost:8000/api/v1/post/${post._id}/${action}`,
+        { withCredentials: true },
+>>>>>>> parent of 56c736c (Updated API URLs and production fixes)
       );
 
       if (res.data.success) {
@@ -75,7 +80,11 @@ const Post = ({ post }) => {
       if (!text.trim()) return;
 
       const res = await axios.post(
+<<<<<<< HEAD
         `https://snapsphere-jwj8.onrender.com/api/v1/post/${post?._id}/comment`,
+=======
+        `http://localhost:8000/api/v1/post/${post._id}/comment`,
+>>>>>>> parent of 56c736c (Updated API URLs and production fixes)
         { text },
         {
           headers: { "Content-Type": "application/json" },
@@ -121,8 +130,13 @@ const Post = ({ post }) => {
   const deletePostHandler = async () => {
     try {
       const res = await axios.delete(
+<<<<<<< HEAD
         `https://snapsphere-jwj8.onrender.com/api/v1/post/delete/${post?._id}`,
         { withCredentials: true }
+=======
+        `http://localhost:8000/api/v1/post/delete/${post?._id}`,
+        { withCredentials: true },
+>>>>>>> parent of 56c736c (Updated API URLs and production fixes)
       );
 
       if (res.data.success) {
@@ -144,8 +158,13 @@ const Post = ({ post }) => {
   const bookmarkHandler = async () => {
     try {
       const res = await axios.get(
+<<<<<<< HEAD
         `https://snapsphere-jwj8.onrender.com/api/v1/post/${post?._id}/bookmark`,
         { withCredentials: true }
+=======
+        `http://localhost:8000/api/v1/post/${post?._id}/bookmark`,
+        { withCredentials: true },
+>>>>>>> parent of 56c736c (Updated API URLs and production fixes)
       );
       if (res.data.success) toast.success(res.data.message);
     } catch (error) {

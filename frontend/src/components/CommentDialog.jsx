@@ -25,7 +25,7 @@ useEffect(() => {
       if (!selectedPost?._id || !open) return;
 
       const res = await axios.get(
-        `https://snapsphere-jwj8.onrender.com/api/v1/post/${selectedPost._id}/comment/all`,
+        `http://localhost:8000/api/v1/post/${selectedPost._id}/comment/all`,
         { withCredentials: true }
       );
 
@@ -51,7 +51,7 @@ useEffect(() => {
       if (!selectedPost?._id) return;
 
       const res = await axios.post(
-        `https://snapsphere-jwj8.onrender.com/api/v1/post/${selectedPost._id}/comment`,
+        `http://localhost:8000/api/v1/post/${selectedPost._id}/comment`,
         { text },
         {
           headers: { "Content-Type": "application/json" },
@@ -106,7 +106,7 @@ useEffect(() => {
       if (!postId || !commentId) return;
 
       const res = await axios.delete(
-        `https://snapsphere-jwj8.onrender.com/api/v1/post/comment/${commentId}`,
+        `http://localhost:8000/api/v1/post/comment/${commentId}`,
         { withCredentials: true }
       );
 

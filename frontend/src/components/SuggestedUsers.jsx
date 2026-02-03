@@ -35,7 +35,7 @@ const SuggestedUsers = () => {
       setLoadingId(targetUserId);
 
       await axios.post(
-        `https://snapsphere-jwj8.onrender.com/api/v1/user/followorunfollow/${targetUserId}`,
+        `http://localhost:8000/api/v1/user/followorunfollow/${targetUserId}`,
         {},
         { withCredentials: true }
       );
