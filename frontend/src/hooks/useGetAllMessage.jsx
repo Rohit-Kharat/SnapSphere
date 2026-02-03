@@ -22,7 +22,6 @@ const useGetAllMessage = () => {
         }
       } catch (error) {
         console.error("Failed to fetch messages:", error);
-        // Optional: Dispatch an error to Redux or show a notification.
       }
     };
 
