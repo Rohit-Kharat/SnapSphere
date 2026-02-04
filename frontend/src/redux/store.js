@@ -22,7 +22,7 @@ const persistConfig = {
   storage,
 
   // ✅ IMPORTANT: do NOT persist socket instance
-  blacklist: ["socketio"],
+  blacklist: ["socketio","auth"],
   // (optional) you can also blacklist chat if you don't want unread/messages to persist:
   // blacklist: ["socketio", "chat"],
 };
