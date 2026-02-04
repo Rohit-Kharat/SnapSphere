@@ -7,23 +7,22 @@ const useGetMe = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const fetchMe = async () => {
-      try {
-        const res = await axios.get("https://snapsphere-jwj8.onrender.com/api/v1/user/me", {
-          withCredentials: true,
-        });
+  const fetchMe = async () => {
+    try {
+      const res = await axios.get(
+        "https://snapsphere-jwj8.onrender.com/api/v1/user/me",
+        { withCredentials: true }
+      );
 
-        if (res.data?.success) {
-          dispatch(setAuthUser(res.data.user)); // ✅ user now has populated bookmarks
-        }
-      } catch (err) {
-        // if not logged in, ignore
-        // console.log("getMe error:", err?.response?.data || err.message);
-      }
-    };
+      if (res.data?.success) dispatch(setAuthUser(res.data.user));
+      else dispatch(setAuthUser(null));
+    } catch (err) {
+      dispatch(setAuthUser(null));
+    }
+  };
 
-    fetchMe();
-  }, [dispatch]);
-};
+  fetchMe();
+}, [dispatch]);
+
 
 export default useGetMe;
