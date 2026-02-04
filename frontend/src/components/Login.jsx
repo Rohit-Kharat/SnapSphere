@@ -1,21 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Input } from './ui/input'
-import { Button } from './ui/button'
-import axios from 'axios';
-import { toast } from 'sonner';
-import { Link, useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
-import { setAuthUser } from '@/redux/authSlice';
-import GoogleButton from './GoogleButton';
+import React, { useEffect, useRef, useState } from "react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import axios from "axios";
+import { toast } from "sonner";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { setAuthUser } from "@/redux/authSlice";
+import GoogleButton from "./GoogleButton";
 
 import BIRDS from "vanta/dist/vanta.birds.min";
 import * as THREE from "three";
 
+const API = "https://snapsphere-jwj8.onrender.com";
+
 const Login = () => {
   const [input, setInput] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const { user } = useSelector(store => store.auth);
+
+  const { user } = useSelector((store) => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -23,36 +26,64 @@ const Login = () => {
   const vantaEffect = useRef(null);
 
   const changeEventHandler = (e) => {
-    setInput({ ...input, [e.target.name]: e.target.value });
-  }
+    setInput((p) => ({ ...p, [e.target.name]: e.target.value }));
+  };
+
+  // ✅ helper: fetch current user from cookie
+  const fetchMe = async () => {
+    try {
+      const res = await axios.get(`${API}/api/v1/user/me`, {
+        withCredentials: true,
+      });
+      if (res.data?.success) {
+        dispatch(setAuthUser(res.data.user));
+        return true;
+      }
+      dispatch(setAuthUser(null));
+      return false;
+    } catch (err) {
+      dispatch(setAuthUser(null));
+      return false;
+    }
+  };
 
   const loginHandler = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await axios.post('https://snapsphere-jwj8.onrender.com/api/v1/user/login', input, {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: true
+
+      const res = await axios.post(`${API}/api/v1/user/login`, input, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
       });
 
-      if (res.data.success) {
-        dispatch(setAuthUser(res.data.user));
-        navigate("/");
-        toast.success(res.data.message);
-        setInput({ email: "", password: "" });
+      if (res.data?.success) {
+        // ✅ IMPORTANT: after cookie is set, sync real user from backend
+        const ok = await fetchMe();
+        if (ok) {
+          toast.success(res.data.message || "Logged in");
+          setInput({ email: "", password: "" });
+          navigate("/");
+        } else {
+          toast.error("Login cookie not set. Please try again.");
+        }
+      } else {
+        toast.error("Login failed");
       }
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message || "Login failed");
+      dispatch(setAuthUser(null));
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  // redirect if already logged in
+  // ✅ Redirect only when we are sure user is valid
+  // (If redux-persist was showing stale user, /me will reset it elsewhere)
   useEffect(() => {
-    if (user) navigate("/");
-  }, [user, navigate]);
+    if (user?._id) navigate("/");
+  }, [user?._id, navigate]);
 
   // ✅ Vanta background
   useEffect(() => {
@@ -67,7 +98,7 @@ const Login = () => {
         minWidth: 200.0,
         scale: 1.0,
         scaleMobile: 1.0,
-        backgroundColor: 0x0f172a, // optional
+        backgroundColor: 0x0f172a,
       });
     }
 
@@ -85,28 +116,30 @@ const Login = () => {
       <div ref={vantaRef} className="absolute inset-0 -z-10" />
 
       {/* ✅ Foreground */}
-      <div className='flex items-center w-full h-full justify-center'>
-        <form onSubmit={loginHandler} className='w-[360px] p-8 flex flex-col gap-5
-  rounded-2xl
-  bg-white/5
-  backdrop-blur-md
-  border border-white/20
-  shadow-2xl '>
-          <div className='my-2'>
-            <h1 className='text-center font-bold text-xl text-white'>SnapSphere</h1>
-            <p className='text-sm text-center text-white'>Login to see photos & videos from your friends</p>
+      <div className="flex items-center w-full h-full justify-center">
+        <form
+          onSubmit={loginHandler}
+          className="w-[360px] p-8 flex flex-col gap-5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/20 shadow-2xl"
+        >
+          <div className="my-2">
+            <h1 className="text-center font-bold text-xl text-white">
+              SnapSphere
+            </h1>
+            <p className="text-sm text-center text-white">
+              Login to see photos & videos from your friends
+            </p>
           </div>
 
           <GoogleButton text="Continue with Google" />
 
           <div className="flex items-center gap-3">
             <div className="h-[1px] bg-gray-200 flex-1" />
-            <span className="text-xs text-gray-500 text-white">OR</span>
+            <span className="text-xs text-white">OR</span>
             <div className="h-[1px] bg-gray-200 flex-1" />
           </div>
 
           <div>
-            <span className='font-medium text-white'>Email</span>
+            <span className="font-medium text-white">Email</span>
             <Input
               type="email"
               name="email"
@@ -117,7 +150,7 @@ const Login = () => {
           </div>
 
           <div>
-            <span className='font-medium text-white'>Password</span>
+            <span className="font-medium text-white">Password</span>
             <Input
               type="password"
               name="password"
@@ -129,20 +162,23 @@ const Login = () => {
 
           {loading ? (
             <Button disabled>
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Please wait
             </Button>
           ) : (
-            <Button type='submit'>Login</Button>
+            <Button type="submit">Login</Button>
           )}
 
-          <span className='text-center text-white'>
-            Doesn&apos;t have an account? <Link to="/signup" className='text-blue-600'>Signup</Link>
+          <span className="text-center text-white">
+            Doesn&apos;t have an account?{" "}
+            <Link to="/signup" className="text-blue-400">
+              Signup
+            </Link>
           </span>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Login;
