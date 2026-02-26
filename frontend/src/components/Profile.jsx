@@ -42,8 +42,8 @@ const Profile = () => {
         ? userPosts
         : userProfile?.posts || []
       : isLoggedInUserProfile
-      ? user?.bookmarks || []
-      : userProfile?.bookmarks || [];
+        ? user?.bookmarks || []
+        : userProfile?.bookmarks || [];
 
   const handleFollowToggle = async () => {
     if (!profileId) return;
@@ -70,9 +70,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="flex max-w-5xl justify-center mx-auto pl-10">
-      <div className="flex flex-col gap-20 p-8">
-        <div className="grid grid-cols-2">
+    <div className="flex max-w-5xl justify-center mx-auto pl-0 md:pl-10 pb-16 md:pb-0">
+      <div className="flex flex-col gap-8 md:gap-20 p-4 md:p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-0">
           <section className="flex items-center justify-center">
             <Avatar className="h-32 w-32">
               <AvatarImage src={userProfile?.profilePicture || ""} alt="profilephoto" />
@@ -81,7 +81,7 @@ const Profile = () => {
           </section>
 
           <section>
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col items-center md:items-start gap-5">
               <div className="flex items-center gap-2">
                 <span>{userProfile?.username || "Unknown User"}</span>
 
@@ -96,11 +96,10 @@ const Profile = () => {
                     <Button
                       onClick={handleFollowToggle}
                       disabled={btnLoading}
-                      className={`h-8 ${
-                        isFollowing
+                      className={`h-8 ${isFollowing
                           ? "bg-gray-200 text-black hover:bg-gray-300"
                           : "bg-[#0095F6] hover:bg-[#3192d2]"
-                      }`}
+                        }`}
                     >
                       {btnLoading ? "..." : isFollowing ? "Unfollow" : "Follow"}
                     </Button>
@@ -114,7 +113,7 @@ const Profile = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center md:justify-start gap-4">
                 <p>
                   <span className="font-semibold">{userProfile?.posts?.length || 0} </span>
                   posts
@@ -129,8 +128,8 @@ const Profile = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <span className="font-semibold">{userProfile?.bio || "bio here..."}</span>
+              <div className="flex flex-col items-center md:items-start gap-1">
+                <span className="font-semibold text-center md:text-left">{userProfile?.bio || "bio here..."}</span>
                 <Badge className="w-fit" variant="secondary">
                   <AtSign /> <span className="pl-1">{userProfile?.username || "Unknown User"}</span>
                 </Badge>
