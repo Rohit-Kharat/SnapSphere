@@ -8,16 +8,16 @@ SnapSphere is a modern, production-grade social media platform designed to suppo
 ## ✨ Key Features
 
 - 🔐 **Authentication & Authorization**
-  - Secure login with OAuth 2.0
-  - Multi-session support across devices
+  - Secure login with OAuth 2.0.
+  - Multi-session support across devices.
 
 - 📸 **Photo Sharing & Feeds**
-  - Upload and share photos
-  - Real-time content feeds with efficient pagination
+  - Upload and share photos.
+  - Real-time content feeds with efficient pagination.
 
 - 💬 **Real-Time Messaging**
-  - Private one-to-one chat
-  - Low-latency message delivery using WebSockets
+  - Private one-to-one chat.
+  - Low-latency message delivery using WebSockets.
 
 - 🟢 **Online / Active Presence**
   - Live user presence and last-seen tracking
