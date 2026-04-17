@@ -24,7 +24,7 @@ export const oauthSuccess = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    // ✅ safest way (works even if CLIENT_URL has / at end)
+
     const redirectUrl = new URL("/auth/success", process.env.CLIENT_URL).toString();
     return res.redirect(redirectUrl);
   } catch (err) {
