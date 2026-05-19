@@ -79,7 +79,7 @@ const Login = () => {
   };
 
   // ✅ Redirect only when we are sure user is valid
-  // (If redux-persist was showing stale user, /me will reset it elsewhere)
+  
   useEffect(() => {
     if (user?._id) navigate("/");
   }, [user?._id, navigate]);
