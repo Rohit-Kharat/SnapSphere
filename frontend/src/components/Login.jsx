@@ -29,7 +29,6 @@ const Login = () => {
     setInput((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  // ✅ helper: fetch current user from cookie
   const fetchMe = async () => {
     try {
       const res = await axios.get(`${API}/api/v1/user/me`, {
