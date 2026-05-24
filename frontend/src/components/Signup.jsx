@@ -51,7 +51,7 @@ const Signup = () => {
     if (user) navigate("/");
   }, [user, navigate]);
 
-  // ✅ Vanta background
+  
   useEffect(() => {
     window.THREE = THREE;
 
@@ -79,10 +79,10 @@ const Signup = () => {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
-      {/* ✅ Background */}
+      
       <div ref={vantaRef} className="absolute inset-0 -z-10" />
 
-      {/* ✅ Foreground */}
+     
       <div className='flex items-center w-full h-full justify-center'>
         <form onSubmit={signupHandler} className=' w-[360px] p-8 flex flex-col gap-5
   rounded-2xl
