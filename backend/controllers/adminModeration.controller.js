@@ -19,7 +19,7 @@ export const reviewComment = async (req, res) => {
   try {
     const adminId = req.id;
     const { commentId } = req.params;
-    const { action, note } = req.body; // approve | reject | shadow
+    const { action, note } = req.body; 
 
     const map = {
       approve: { status: "approved", decision: "allow" },
